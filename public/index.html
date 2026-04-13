@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YT Downloader & Audio Converter</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <h1>YT Downloader &amp; Audio Converter</h1>
+      <p class="header-sub">Descarga vídeos de YouTube y convierte audio entre formatos</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── SECCION 1: Descargador YouTube ── -->
+    <section class="card" id="section-download">
+      <div class="card-header">
+        <span class="card-icon">&#9654;</span>
+        <h2>Descargador de YouTube</h2>
+      </div>
+      <div class="card-body">
+
+        <div class="input-group">
+          <label for="yt-url">URL del vídeo</label>
+          <input
+            type="url"
+            id="yt-url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="row-options">
+          <div class="input-group">
+            <label for="yt-format">Formato</label>
+            <select id="yt-format">
+              <option value="mp4">MP4 (vídeo)</option>
+              <option value="mp3">MP3 (solo audio)</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="yt-quality">Calidad</label>
+            <select id="yt-quality">
+              <option value="best">Alta (mejor)</option>
+              <option value="medium" selected>Media (720p)</option>
+              <option value="low">Baja (480p)</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-get-info">Obtener información</button>
+
+        <!-- Video info preview -->
+        <div class="video-info hidden" id="video-info">
+          <img id="video-thumbnail" src="" alt="Miniatura" />
+          <div class="video-meta">
+            <p id="video-title"></p>
+            <p id="video-uploader"></p>
+            <p id="video-duration"></p>
+          </div>
+        </div>
+
+        <!-- Nombre personalizado -->
+        <div class="input-group hidden" id="filename-group">
+          <label for="yt-filename">Nombre del archivo</label>
+          <div class="filename-row">
+            <input
+              type="text"
+              id="yt-filename"
+              placeholder="Nombre personalizado (sin extensión)"
+              autocomplete="off"
+            />
+            <button class="btn-icon" id="btn-reset-filename" title="Restaurar nombre original">&#8635;</button>
+          </div>
+        </div>
+
+        <button class="btn btn-success hidden" id="btn-download">Descargar</button>
+
+        <!-- Progress -->
+        <div class="progress-wrap hidden" id="dl-progress-wrap">
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner indeterminate" id="dl-progress-bar"></div>
+          </div>
+          <p class="progress-label" id="dl-progress-label">Descargando...</p>
+        </div>
+
+        <!-- Status message -->
+        <div class="message hidden" id="dl-message"></div>
+
+      </div>
+    </section>
+
+    <!-- ── SECCION 2: Convertidor de Audio ── -->
+    <section class="card" id="section-convert">
+      <div class="card-header">
+        <span class="card-icon">&#9881;</span>
+        <h2>Convertidor de Audio</h2>
+      </div>
+      <div class="card-body">
+
+        <!-- Drag & Drop zone -->
+        <div class="drop-zone" id="drop-zone">
+          <p>Arrastra tu archivo de audio aquí</p>
+          <p class="drop-sub">o</p>
+          <label class="btn btn-secondary" for="audio-file-input">Seleccionar archivo</label>
+          <input type="file" id="audio-file-input" accept="audio/*,video/mp4" hidden />
+          <p class="drop-hint">MP3, WAV, AAC, FLAC, OGG, M4A &mdash; máx. 50 MB</p>
+        </div>
+
+        <!-- Selected file info -->
+        <div class="file-info hidden" id="file-info">
+          <span class="file-icon">&#127925;</span>
+          <span id="file-name"></span>
+          <span id="file-size"></span>
+          <button class="btn-clear" id="btn-clear-file" title="Quitar archivo">&times;</button>
+        </div>
+
+        <div class="input-group">
+          <label for="output-format">Formato de salida</label>
+          <select id="output-format">
+            <option value="">Cargando formatos...</option>
+          </select>
+        </div>
+
+        <button class="btn btn-success" id="btn-convert" disabled>Convertir</button>
+
+        <!-- Progress -->
+        <div class="progress-wrap hidden" id="cv-progress-wrap">
+          <div class="progress-bar-outer">
+            <div class="progress-bar-inner indeterminate" id="cv-progress-bar"></div>
+          </div>
+          <p class="progress-label" id="cv-progress-label">Convirtiendo...</p>
+        </div>
+
+        <!-- Status message -->
+        <div class="message hidden" id="cv-message"></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      Solo para uso personal con contenido de tu propiedad o bajo licencia Creative Commons.
+      Respeta los derechos de autor.
+    </p>
+  </footer>
+
+  <script src="js/download.js"></script>
+  <script src="js/converter.js"></script>
+</body>
+</html>
