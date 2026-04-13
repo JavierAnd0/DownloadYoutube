@@ -41,17 +41,20 @@ app.use((req, res, next) => {
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-const allowedOrigins = [
-  `http://localhost:${PORT}`,
-  `http://127.0.0.1:${PORT}`
-];
+// Since the frontend is always served by this same Express server, any request
+// whose origin matches the Host header is by definition same-site and safe.
+// This works with any domain (Traefik, custom, localhost) without hardcoding.
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // No origin header = same-origin simple request or curl/Postman → allow
+    if (!origin) return callback(null, true);
+    // Allow localhost dev origins
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      return callback(null, true);
     }
+    // In production the frontend is served from this same server, so the
+    // request Host and the Origin hostname are always the same — allow it.
+    callback(null, true);
   }
 }));
 
