@@ -10,16 +10,18 @@ const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, 
 // node is always available in our node:22-alpine base image.
 const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
 
-// Use the web client so bgutil-ytdlp-pot-provider can supply PO tokens.
-// iOS/android_vr bypass PO tokens but are now bot-detected on datacenter IPs.
-// If BGUTIL_HTTP_ENDPOINT is set, pass it explicitly as an extractor arg so
-// the plugin knows where the bgutil HTTP server is, regardless of env reading order.
+// Use the web client with cookies auth — on datacenter IPs YouTube blocks
+// all clients (ios, android_vr, tv_embedded) at the IP level. Cookies from
+// a logged-in account bypass that check. tv_embedded is kept as first choice
+// since it requires fewer cookie scopes; web is the authoritative fallback.
 function buildYoutubeClientArgs() {
-  const bgutilEndpoint = process.env.BGUTIL_HTTP_ENDPOINT;
-  const extractorValue = bgutilEndpoint
-    ? `youtube:player_client=web,mweb;getpot_bgutil_baseurl=${bgutilEndpoint}`
-    : 'youtube:player_client=web,mweb';
-  return ['--extractor-args', extractorValue];
+  const bgutilUrl = process.env.BGUTIL_HTTP_ENDPOINT;
+  const bgutilArg = bgutilUrl
+    ? `youtubepot-bgutilhttp:base_url=${bgutilUrl}`
+    : null;
+  const clientArg = 'youtube:player_client=tv_embedded,web,mweb';
+  const extraArgs = [clientArg, bgutilArg].filter(Boolean).join(';');
+  return ['--extractor-args', extraArgs];
 }
 
 /**
@@ -28,7 +30,13 @@ function buildYoutubeClientArgs() {
  */
 function cookiesArgs() {
   if (!YTDLP_COOKIES) return [];
-  if (!fs.existsSync(YTDLP_COOKIES)) {
+  try {
+    const stat = fs.statSync(YTDLP_COOKIES);
+    if (!stat.isFile()) {
+      console.warn(`[yt-dlp] YTDLP_COOKIES path is not a file (got ${stat.isDirectory() ? 'directory' : 'other'}): ${YTDLP_COOKIES}`);
+      return [];
+    }
+  } catch {
     console.warn(`[yt-dlp] cookies file not found: ${YTDLP_COOKIES}`);
     return [];
   }
@@ -88,10 +96,10 @@ function getVideoInfo(url) {
 
     execFile(YTDLP_BIN, args, { timeout: 30000 }, (err, stdout, stderr) => {
       if (err) {
-        const errLine = (stderr || '')
-          .split('\n')
-          .find(l => l.includes('ERROR:') || l.includes('error'));
-        const detail = errLine ? errLine.replace(/^ERROR:\s*/, '').trim() : 'Verifica la URL o inténtalo de nuevo';
+        const lines  = (stderr || '').split('\n').filter(Boolean);
+        const errLine = lines.find(l => l.includes('ERROR:')) || lines.find(l => l.includes('error'));
+        const detail  = errLine ? errLine.replace(/^ERROR:\s*/, '').trim() : 'Verifica la URL o inténtalo de nuevo';
+        console.error('[yt-dlp getVideoInfo stderr]\n', stderr);
         return reject(new Error(`yt-dlp: ${detail}`));
       }
       try {
@@ -166,10 +174,10 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
 
     execFile(YTDLP_BIN, args, { timeout: 300000 }, (err, stdout, stderr) => {
       if (err) {
-        const errLine = (stderr || '')
-          .split('\n')
-          .find(l => l.includes('ERROR:') || l.includes('error'));
-        const detail = errLine ? errLine.replace(/^ERROR:\s*/, '').trim() : 'Comprueba que yt-dlp y ffmpeg están instalados';
+        const lines   = (stderr || '').split('\n').filter(Boolean);
+        const errLine = lines.find(l => l.includes('ERROR:')) || lines.find(l => l.includes('error'));
+        const detail  = errLine ? errLine.replace(/^ERROR:\s*/, '').trim() : 'Comprueba que yt-dlp y ffmpeg están instalados';
+        console.error('[yt-dlp downloadVideo stderr]\n', stderr);
         return reject(new Error(`yt-dlp: ${detail}`));
       }
 
