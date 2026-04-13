@@ -5,8 +5,6 @@ services:
 
   app:
     build: .
-    ports:
-      - "${PORT:-3000}:3000"
     env_file:
       - .env
     environment:
