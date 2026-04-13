@@ -1,39 +1,10 @@
 const { execFile } = require('child_process');
 const path = require('path');
-const fs = require('fs');
+const fs   = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const config = require('../config');
 
-const downloadsDir = path.join(__dirname, '..', '..', process.env.DOWNLOADS_DIR || 'downloads');
-
-// Resolve yt-dlp binary: honour env var, then common Windows pip location, then PATH
-function getYtDlpBin() {
-  if (process.env.YTDLP_BIN) return process.env.YTDLP_BIN;
-  const winPip = path.join(
-    process.env.APPDATA || '',
-    'Python', 'Python314', 'Scripts', 'yt-dlp.exe'
-  );
-  if (fs.existsSync(winPip)) return winPip;
-  return 'yt-dlp';
-}
-
-/**
- * Whitelist of supported platforms and their URL patterns.
- * yt-dlp supports all of these natively.
- */
-const PLATFORM_PATTERNS = [
-  // YouTube — videos, Shorts, live
-  /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|live\/)|youtu\.be\/)[\w-]{11}([?&][^"'\s<>]*)?$/,
-  // Facebook — reels, stories, video posts, watch
-  /^https?:\/\/(www\.|m\.)?facebook\.com\/.+/,
-  // Instagram — reels, posts, IGTV, stories
-  /^https?:\/\/(www\.)?instagram\.com\/(p|reel|tv|stories)\/.+/,
-  // TikTok — standard and short links
-  /^https?:\/\/(www\.|vm\.)?tiktok\.com\/.+/,
-  // SoundCloud — tracks, podcasts, mixes
-  /^https?:\/\/(www\.)?soundcloud\.com\/.+/,
-  // X / Twitter — video posts and GIFs
-  /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/.+/,
-];
+const { DOWNLOADS_DIR, YTDLP_BIN, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
 
 /**
  * Returns true if the URL belongs to a supported platform.
@@ -51,16 +22,15 @@ function isValidUrl(url) {
 }
 
 /**
- * Maps a quality label to yt-dlp format selectors.
- * Fallbacks ensure compatibility with platforms that don't have MP4 streams.
+ * Maps format + quality to yt-dlp selectors.
+ * Audio formats always extract at best quality (--audio-quality 0).
  */
 function buildFormatSelector(format, quality) {
-  if (format === 'mp3') {
-    const qualityMap = { best: '0', medium: '5', low: '9' };
-    return { extractAudio: true, audioQuality: qualityMap[quality] || '5' };
+  if (DOWNLOAD_AUDIO_FORMATS.includes(format)) {
+    return { extractAudio: true, audioFormat: format, audioQuality: '0' };
   }
 
-  // MP4 — trailing /best fallback handles platforms without MP4-specific streams
+  // MP4 video quality ladder
   const qualityMap = {
     best:   'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
     medium: 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
@@ -79,10 +49,9 @@ function getVideoInfo(url) {
       return reject(new Error('URL no válida o plataforma no soportada'));
     }
 
-    const bin = getYtDlpBin();
     const args = ['--dump-json', '--no-playlist', url];
 
-    execFile(bin, args, { timeout: 30000 }, (err, stdout, stderr) => {
+    execFile(YTDLP_BIN, args, { timeout: 30000 }, (err, stdout, stderr) => {
       if (err) {
         const errLine = (stderr || '')
           .split('\n')
@@ -99,7 +68,7 @@ function getVideoInfo(url) {
           uploader:   info.uploader || info.channel || info.creator,
           viewCount:  info.view_count,
           likeCount:  info.like_count  ?? null,
-          uploadDate: info.upload_date ?? null,   // "YYYYMMDD" string
+          uploadDate: info.upload_date ?? null,
           formats:    (info.formats || [])
             .filter(f => f.ext && f.format_note)
             .map(f => ({ id: f.format_id, ext: f.ext, note: f.format_note, resolution: f.resolution }))
@@ -120,27 +89,26 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
     if (!isValidUrl(url)) {
       return reject(new Error('URL no válida o plataforma no soportada'));
     }
-    if (!['mp3', 'mp4'].includes(format)) {
-      return reject(new Error('Formato no soportado. Usa mp3 o mp4'));
+    const isAudio = DOWNLOAD_AUDIO_FORMATS.includes(format);
+    if (!isAudio && format !== 'mp4') {
+      return reject(new Error(`Formato no soportado: ${format}`));
     }
-    if (!['best', 'medium', 'low'].includes(quality)) {
+    if (!isAudio && !['best', 'medium', 'low'].includes(quality)) {
       return reject(new Error('Calidad no válida. Usa best, medium o low'));
     }
 
-    const fileId = uuidv4();
-    const outputTemplate = path.join(downloadsDir, `${fileId}.%(ext)s`);
-    const sel = buildFormatSelector(format, quality);
-    const bin = getYtDlpBin();
-    const ffmpegBin = process.env.FFMPEG_BIN || 'ffmpeg';
+    const fileId         = uuidv4();
+    const outputTemplate = path.join(DOWNLOADS_DIR, `${fileId}.%(ext)s`);
+    const sel            = buildFormatSelector(format, quality);
 
     let args;
-    if (format === 'mp3') {
+    if (isAudio) {
       args = [
         '--no-playlist',
         '-x',
-        '--audio-format', 'mp3',
+        '--audio-format', sel.audioFormat,
         '--audio-quality', sel.audioQuality,
-        '--ffmpeg-location', ffmpegBin,
+        '--ffmpeg-location', FFMPEG_BIN,
         '-o', outputTemplate,
         url
       ];
@@ -149,13 +117,13 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--no-playlist',
         '-f', sel.formatSelector,
         '--merge-output-format', 'mp4',
-        '--ffmpeg-location', ffmpegBin,
+        '--ffmpeg-location', FFMPEG_BIN,
         '-o', outputTemplate,
         url
       ];
     }
 
-    execFile(bin, args, { timeout: 300000 }, (err, stdout, stderr) => {
+    execFile(YTDLP_BIN, args, { timeout: 300000 }, (err, stdout, stderr) => {
       if (err) {
         const errLine = (stderr || '')
           .split('\n')
@@ -164,12 +132,12 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         return reject(new Error(`yt-dlp: ${detail}`));
       }
 
-      const files = fs.readdirSync(downloadsDir).filter(f => f.startsWith(fileId));
+      const files = fs.readdirSync(DOWNLOADS_DIR).filter(f => f.startsWith(fileId));
       if (files.length === 0) {
         return reject(new Error('Archivo descargado no encontrado'));
       }
 
-      const filePath = path.join(downloadsDir, files[0]);
+      const filePath = path.join(DOWNLOADS_DIR, files[0]);
       resolve({ filePath, filename: files[0] });
     });
   });

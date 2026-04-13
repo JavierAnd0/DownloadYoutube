@@ -3,155 +3,267 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YT Downloader & Audio Converter</title>
+
+  <title>GRABR — Descarga vídeos y convierte audio</title>
+  <meta name="description" content="Descarga vídeos de YouTube, TikTok, Instagram, Facebook, SoundCloud y X en MP4 o MP3. Convierte audio entre formatos." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#0A0A0A" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230A0A0A'/><text y='.85em' font-size='75' fill='%23C8FF00'>&#9660;</text></svg>" />
+
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-  <header>
-    <div class="header-inner">
-      <h1>YT Downloader &amp; Audio Converter</h1>
-      <p class="header-sub">Descarga vídeos de YouTube y convierte audio entre formatos</p>
+  <!-- ── NAV ──────────────────────────────────────────────────────── -->
+  <nav class="nav" role="navigation" aria-label="Navegación principal">
+    <div class="nav-inner">
+      <a class="nav-logo" href="/" aria-label="GRABR – inicio">
+        <span class="nav-logo-mark" aria-hidden="true">&#9660;</span>
+        GRABR
+      </a>
+      <span class="nav-tagline" aria-hidden="true">Descarga · Convierte · Listo</span>
     </div>
-  </header>
+  </nav>
 
-  <main>
+  <!-- ── HERO ─────────────────────────────────────────────────────── -->
+  <section class="hero" aria-label="Descripción de la herramienta">
+    <div class="hero-inner">
+      <h1 class="hero-title">DOWNLOAD<br /><em>ANYTHING.</em></h1>
+      <p class="hero-sub">YouTube, TikTok, Instagram, Facebook, SoundCloud, X — en segundos.</p>
 
-    <!-- ── SECCION 1: Descargador YouTube ── -->
-    <section class="card" id="section-download">
-      <div class="card-header">
-        <span class="card-icon">&#9654;</span>
-        <h2>Descargador de YouTube</h2>
+      <div class="platform-pills" aria-label="Plataformas compatibles">
+        <span class="pill pill-yt"  aria-label="YouTube">&#9654; YouTube</span>
+        <span class="pill pill-tt"  aria-label="TikTok">&#9835; TikTok</span>
+        <span class="pill pill-ig"  aria-label="Instagram">&#9679; Instagram</span>
+        <span class="pill pill-fb"  aria-label="Facebook">f Facebook</span>
+        <span class="pill pill-sc"  aria-label="SoundCloud">&#9729; SoundCloud</span>
+        <span class="pill pill-x"   aria-label="X / Twitter">&#10005; X</span>
       </div>
-      <div class="card-body">
+    </div>
+  </section>
 
-        <div class="input-group">
-          <label for="yt-url">URL del vídeo</label>
+  <!-- ── MAIN ─────────────────────────────────────────────────────── -->
+  <main id="main-content" class="main-grid">
+
+    <!-- ─── PANEL 1: Descargador ─────────────────────────────────── -->
+    <section class="panel" id="section-download" aria-labelledby="heading-download">
+      <div class="panel-head">
+        <h2 id="heading-download">
+          <span class="panel-num" aria-hidden="true">01</span>
+          Descargador
+        </h2>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- URL Input -->
+        <div class="field-group">
+          <label class="field-label" for="yt-url">URL del vídeo</label>
           <input
+            class="field-input"
             type="url"
             id="yt-url"
-            placeholder="https://www.youtube.com/watch?v=..."
+            placeholder="https://youtube.com/watch?v=..."
             autocomplete="off"
+            aria-describedby="yt-url-hint"
           />
+          <span id="yt-url-hint" class="field-hint">Pega el enlace de cualquier plataforma soportada</span>
         </div>
 
-        <div class="row-options">
-          <div class="input-group">
-            <label for="yt-format">Formato</label>
-            <select id="yt-format">
-              <option value="mp4">MP4 (vídeo)</option>
-              <option value="mp3">MP3 (solo audio)</option>
-            </select>
+        <button class="btn btn-primary" id="btn-get-info">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Obtener información
+        </button>
+
+        <!-- Video info card -->
+        <div class="video-card hidden" id="video-info" aria-live="polite">
+          <div class="video-card-thumb">
+            <img id="video-thumbnail" src="" alt="" width="320" height="180" />
+            <span class="vc-dur hidden" id="video-duration"></span>
           </div>
-          <div class="input-group">
-            <label for="yt-quality">Calidad</label>
-            <select id="yt-quality">
-              <option value="best">Alta (mejor)</option>
-              <option value="medium" selected>Media (720p)</option>
-              <option value="low">Baja (480p)</option>
-            </select>
+          <div class="video-card-meta">
+            <p class="vc-title" id="video-title"></p>
+            <div class="vc-stats">
+              <span class="vc-stat hidden" id="vi-views">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span id="video-views"></span>
+              </span>
+              <span class="vc-stat hidden" id="vi-likes">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+                <span id="video-likes"></span>
+              </span>
+              <span class="vc-stat hidden" id="vi-date">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <span id="video-date"></span>
+              </span>
+            </div>
+            <div class="vc-uploader hidden" id="vi-uploader-row">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span id="video-uploader"></span>
+            </div>
           </div>
         </div>
 
-        <button class="btn btn-primary" id="btn-get-info">Obtener información</button>
+        <!-- Format picker -->
+        <div class="format-picker hidden" id="format-picker">
+          <p class="format-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+            Vídeo
+          </p>
+          <div class="format-grid">
+            <button class="format-card" data-format="mp4" data-quality="best" type="button">
+              <span class="fc-ext">MP4</span>
+              <span class="fc-desc">Mejor calidad</span>
+            </button>
+            <button class="format-card" data-format="mp4" data-quality="medium" type="button">
+              <span class="fc-ext">MP4</span>
+              <span class="fc-desc">720p</span>
+            </button>
+            <button class="format-card" data-format="mp4" data-quality="low" type="button">
+              <span class="fc-ext">MP4</span>
+              <span class="fc-desc">480p</span>
+            </button>
+          </div>
 
-        <!-- Video info preview -->
-        <div class="video-info hidden" id="video-info">
-          <img id="video-thumbnail" src="" alt="Miniatura" />
-          <div class="video-meta">
-            <p id="video-title"></p>
-            <p id="video-uploader"></p>
-            <p id="video-duration"></p>
+          <p class="format-label" style="margin-top:1rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="18" r="4"/><path d="M12 18V2l7 4"/></svg>
+            Audio
+          </p>
+          <div class="format-grid format-grid-audio">
+            <button class="format-card" data-format="mp3" data-quality="best" type="button">
+              <span class="fc-ext">MP3</span>
+              <span class="fc-desc">Universal</span>
+            </button>
+            <button class="format-card" data-format="wav" data-quality="best" type="button">
+              <span class="fc-ext">WAV</span>
+              <span class="fc-desc">Sin pérdida</span>
+            </button>
+            <button class="format-card" data-format="aac" data-quality="best" type="button">
+              <span class="fc-ext">AAC</span>
+              <span class="fc-desc">Alta eficiencia</span>
+            </button>
+            <button class="format-card" data-format="m4a" data-quality="best" type="button">
+              <span class="fc-ext">M4A</span>
+              <span class="fc-desc">Apple/iTunes</span>
+            </button>
+            <button class="format-card" data-format="opus" data-quality="best" type="button">
+              <span class="fc-ext">OPUS</span>
+              <span class="fc-desc">Streaming</span>
+            </button>
+            <button class="format-card" data-format="flac" data-quality="best" type="button">
+              <span class="fc-ext">FLAC</span>
+              <span class="fc-desc">Lossless</span>
+            </button>
           </div>
         </div>
 
-        <!-- Nombre personalizado -->
-        <div class="input-group hidden" id="filename-group">
-          <label for="yt-filename">Nombre del archivo</label>
+        <!-- Filename -->
+        <div class="field-group hidden" id="filename-group">
+          <label class="field-label" for="yt-filename">Nombre del archivo</label>
           <div class="filename-row">
             <input
+              class="field-input"
               type="text"
               id="yt-filename"
               placeholder="Nombre personalizado (sin extensión)"
               autocomplete="off"
             />
-            <button class="btn-icon" id="btn-reset-filename" title="Restaurar nombre original">&#8635;</button>
+            <button class="btn-icon" id="btn-reset-filename" title="Restaurar nombre original" aria-label="Restaurar nombre original">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
           </div>
         </div>
 
-        <button class="btn btn-success hidden" id="btn-download">Descargar</button>
+        <button class="btn btn-electric hidden" id="btn-download">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Descargar
+        </button>
 
         <!-- Progress -->
-        <div class="progress-wrap hidden" id="dl-progress-wrap">
-          <div class="progress-bar-outer">
-            <div class="progress-bar-inner indeterminate" id="dl-progress-bar"></div>
-          </div>
-          <p class="progress-label" id="dl-progress-label">Descargando...</p>
+        <div class="progress-wrap hidden" id="dl-progress-wrap" role="status" aria-live="polite">
+          <div class="dots-loader" aria-hidden="true"><span></span><span></span><span></span></div>
+          <p class="progress-label" id="dl-progress-label">Procesando...</p>
         </div>
 
-        <!-- Status message -->
-        <div class="message hidden" id="dl-message"></div>
+        <div class="msg-box hidden" id="dl-message" role="alert" aria-live="assertive"></div>
 
       </div>
     </section>
 
-    <!-- ── SECCION 2: Convertidor de Audio ── -->
-    <section class="card" id="section-convert">
-      <div class="card-header">
-        <span class="card-icon">&#9881;</span>
-        <h2>Convertidor de Audio</h2>
+    <!-- ─── PANEL 2: Convertidor ─────────────────────────────────── -->
+    <section class="panel" id="section-convert" aria-labelledby="heading-convert">
+      <div class="panel-head">
+        <h2 id="heading-convert">
+          <span class="panel-num" aria-hidden="true">02</span>
+          Convertidor
+        </h2>
       </div>
-      <div class="card-body">
 
-        <!-- Drag & Drop zone -->
-        <div class="drop-zone" id="drop-zone">
-          <p>Arrastra tu archivo de audio aquí</p>
+      <div class="panel-body">
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone" role="region" aria-label="Zona de arrastrar y soltar archivo de audio">
+          <svg class="drop-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          <p class="drop-text">Arrastra tu archivo aquí</p>
           <p class="drop-sub">o</p>
-          <label class="btn btn-secondary" for="audio-file-input">Seleccionar archivo</label>
-          <input type="file" id="audio-file-input" accept="audio/*,video/mp4" hidden />
-          <p class="drop-hint">MP3, WAV, AAC, FLAC, OGG, M4A &mdash; máx. 50 MB</p>
+          <label class="btn btn-outline" for="audio-file-input">Seleccionar archivo</label>
+          <input type="file" id="audio-file-input" accept="audio/*,video/mp4" hidden aria-label="Seleccionar archivo de audio" />
+          <p class="drop-hint">MP3, WAV, AAC, FLAC, OGG, M4A · máx. 50 MB</p>
         </div>
 
         <!-- Selected file info -->
-        <div class="file-info hidden" id="file-info">
-          <span class="file-icon">&#127925;</span>
+        <div class="file-info hidden" id="file-info" aria-live="polite">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
           <span id="file-name"></span>
-          <span id="file-size"></span>
-          <button class="btn-clear" id="btn-clear-file" title="Quitar archivo">&times;</button>
+          <span class="file-size" id="file-size"></span>
+          <button class="btn-clear" id="btn-clear-file" title="Quitar archivo" aria-label="Quitar archivo seleccionado">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
         </div>
 
-        <div class="input-group">
-          <label for="output-format">Formato de salida</label>
-          <select id="output-format">
+        <!-- Format select -->
+        <div class="field-group">
+          <label class="field-label" for="output-format">Formato de salida</label>
+          <select class="field-select" id="output-format" aria-describedby="output-format-hint">
             <option value="">Cargando formatos...</option>
           </select>
+          <span id="output-format-hint" class="field-hint">El archivo original no se modifica</span>
         </div>
 
-        <button class="btn btn-success" id="btn-convert" disabled>Convertir</button>
+        <button class="btn btn-electric" id="btn-convert" disabled aria-disabled="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          Convertir
+        </button>
 
         <!-- Progress -->
-        <div class="progress-wrap hidden" id="cv-progress-wrap">
-          <div class="progress-bar-outer">
-            <div class="progress-bar-inner indeterminate" id="cv-progress-bar"></div>
-          </div>
+        <div class="progress-wrap hidden" id="cv-progress-wrap" role="status" aria-live="polite">
+          <div class="dots-loader" aria-hidden="true"><span></span><span></span><span></span></div>
           <p class="progress-label" id="cv-progress-label">Convirtiendo...</p>
         </div>
 
-        <!-- Status message -->
-        <div class="message hidden" id="cv-message"></div>
+        <div class="msg-box hidden" id="cv-message" role="alert" aria-live="assertive"></div>
 
       </div>
     </section>
 
   </main>
 
-  <footer>
-    <p>
-      Solo para uso personal con contenido de tu propiedad o bajo licencia Creative Commons.
-      Respeta los derechos de autor.
-    </p>
+  <!-- ── FOOTER ────────────────────────────────────────────────────── -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-inner">
+      <span class="footer-logo">GRABR</span>
+      <p class="footer-note">Solo para uso personal con contenido de tu propiedad o bajo licencia Creative Commons. Respeta los derechos de autor.</p>
+    </div>
   </footer>
 
+  <script src="js/common.js"></script>
   <script src="js/download.js"></script>
   <script src="js/converter.js"></script>
 </body>

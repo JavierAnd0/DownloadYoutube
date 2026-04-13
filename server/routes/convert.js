@@ -1,16 +1,15 @@
 const express = require('express');
-const router = express.Router();
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { convertAudio, getSupportedFormats, SUPPORTED_FORMATS } = require('../utils/audioConverter');
-
-const uploadsDir = path.join(__dirname, '..', '..', process.env.UPLOADS_DIR || 'uploads');
-const MAX_MB = parseInt(process.env.MAX_FILE_SIZE_MB || '50', 10);
+const router  = express.Router();
+const multer  = require('multer');
+const path    = require('path');
+const fs      = require('fs');
+const { UPLOADS_DIR, MAX_FILE_SIZE_MB, SUPPORTED_FORMATS } = require('../config');
+const { getSupportedFormats } = require('../adapters/audioConverter');
+const { prepareConversion, streamConvertedFile } = require('../services/convertService');
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
-  filename: (req, file, cb) => {
+  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+  filename:    (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
   }
@@ -18,7 +17,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: MAX_MB * 1024 * 1024 },
+  limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedMimes = [
       'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav',
@@ -33,7 +32,7 @@ const upload = multer({
   }
 });
 
-// GET /api/formats
+// GET /api/convert/formats
 router.get('/formats', (req, res) => {
   res.json({ success: true, formats: getSupportedFormats() });
 });
@@ -59,27 +58,8 @@ router.post('/', upload.single('file'), async (req, res, next) => {
   }
 
   try {
-    const { filePath, filename } = await convertAudio(req.file.path, outputFormat);
-
-    const mimeTypes = {
-      mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
-      flac: 'audio/flac', ogg: 'audio/ogg', m4a: 'audio/mp4'
-    };
-
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', mimeTypes[outputFormat] || 'application/octet-stream');
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-    fileStream.on('close', () => {
-      fs.unlink(filePath, () => {});
-      fs.unlink(req.file.path, () => {});
-    });
-    fileStream.on('error', (err) => {
-      fs.unlink(filePath, () => {});
-      fs.unlink(req.file.path, () => {});
-      next(err);
-    });
+    const { filePath, filename, contentType } = await prepareConversion(req.file.path, outputFormat);
+    streamConvertedFile(filePath, req.file.path, filename, contentType, res, next);
   } catch (err) {
     fs.unlink(req.file.path, () => {});
     next(err);
@@ -89,7 +69,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
 // Multer error handler
 router.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
-    return res.status(400).json({ success: false, error: `El archivo supera el límite de ${MAX_MB}MB` });
+    return res.status(400).json({ success: false, error: `El archivo supera el límite de ${MAX_FILE_SIZE_MB}MB` });
   }
   next(err);
 });

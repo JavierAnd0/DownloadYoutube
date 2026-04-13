@@ -1,5 +1,7 @@
 /* ─── Converter section ────────────────────────────────────── */
 (function () {
+  const { formatBytes } = window.COMMON;
+
   const dropZone      = document.getElementById('drop-zone');
   const fileInput     = document.getElementById('audio-file-input');
   const fileInfoBox   = document.getElementById('file-info');
@@ -15,7 +17,7 @@
   const MAX_BYTES = 50 * 1024 * 1024;
   let selectedFile = null;
 
-  // ── Load supported formats ──
+  // ── Load supported formats ──────────────────────────────────
   (async function loadFormats() {
     try {
       const res  = await fetch('/api/convert/formats');
@@ -28,11 +30,6 @@
       formatSelect.innerHTML = '<option value="">Error al cargar formatos</option>';
     }
   })();
-
-  function formatBytes(bytes) {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-  }
 
   function showMessage(text, type) {
     msgBox.textContent = text;
@@ -64,7 +61,7 @@
     hideMessage();
   }
 
-  // ── Drag & Drop ──
+  // ── Drag & Drop ──────────────────────────────────────────────
   dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('drag-over');
@@ -80,15 +77,15 @@
     if (e.target.tagName !== 'LABEL' && e.target.tagName !== 'INPUT') fileInput.click();
   });
 
-  // ── File input ──
+  // ── File input ──────────────────────────────────────────────
   fileInput.addEventListener('change', () => {
     if (fileInput.files[0]) setFile(fileInput.files[0]);
   });
 
-  // ── Clear file ──
+  // ── Clear file ──────────────────────────────────────────────
   btnClear.addEventListener('click', clearFile);
 
-  // ── Convert ──
+  // ── Convert ─────────────────────────────────────────────────
   btnConvert.addEventListener('click', async () => {
     if (!selectedFile) { showMessage('Selecciona un archivo primero', 'error'); return; }
 

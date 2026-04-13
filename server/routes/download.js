@@ -1,8 +1,11 @@
 const express = require('express');
-const router = express.Router();
-const path = require('path');
-const fs = require('fs');
-const { downloadVideo, getVideoInfo, isValidYouTubeUrl } = require('../utils/ytDownloader');
+const router  = express.Router();
+const { isValidUrl } = require('../adapters/ytDownloader');
+const { fetchVideoInfo, prepareDownload, streamFileToResponse } = require('../services/downloadService');
+const { DOWNLOAD_AUDIO_FORMATS } = require('../config');
+
+const VALID_FORMATS  = ['mp4', ...DOWNLOAD_AUDIO_FORMATS];
+const VIDEO_QUALITIES = ['best', 'medium', 'low'];
 
 // GET /api/download/info?url=...
 router.get('/info', async (req, res, next) => {
@@ -11,23 +14,17 @@ router.get('/info', async (req, res, next) => {
   if (!url) {
     return res.status(400).json({ success: false, error: 'Se requiere el parámetro "url"' });
   }
-  if (!isValidYouTubeUrl(url)) {
-    return res.status(400).json({ success: false, error: 'URL de YouTube no válida' });
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ success: false, error: 'URL no válida o plataforma no soportada' });
   }
 
   try {
-    const info = await getVideoInfo(url);
+    const info = await fetchVideoInfo(url);
     res.json({ success: true, data: info });
   } catch (err) {
     next(err);
   }
 });
-
-// Sanitize a user-supplied filename: strip path separators and reserved chars
-function sanitizeFilename(name) {
-  if (!name || typeof name !== 'string') return '';
-  return name.replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 200);
-}
 
 // POST /api/download
 // Body: { url, format, quality, filename? }
@@ -37,40 +34,20 @@ router.post('/', async (req, res, next) => {
   if (!url) {
     return res.status(400).json({ success: false, error: 'Se requiere el campo "url"' });
   }
-  if (!isValidYouTubeUrl(url)) {
-    return res.status(400).json({ success: false, error: 'URL de YouTube no válida' });
+  if (!isValidUrl(url)) {
+    return res.status(400).json({ success: false, error: 'URL no válida o plataforma no soportada' });
   }
-  if (!['mp3', 'mp4'].includes(format)) {
-    return res.status(400).json({ success: false, error: 'Formato no válido. Usa "mp3" o "mp4"' });
+  if (!VALID_FORMATS.includes(format)) {
+    return res.status(400).json({ success: false, error: `Formato no válido. Usa: ${VALID_FORMATS.join(', ')}` });
   }
-  if (!['best', 'medium', 'low'].includes(quality)) {
+  // Quality only applies to MP4 video downloads
+  if (format === 'mp4' && !VIDEO_QUALITIES.includes(quality)) {
     return res.status(400).json({ success: false, error: 'Calidad no válida. Usa "best", "medium" o "low"' });
   }
 
   try {
-    const { filePath } = await downloadVideo(url, format, quality);
-
-    // Build the download filename: use custom name if provided, otherwise the video title
-    const baseName   = sanitizeFilename(filename) || 'descarga';
-    const outputName = `${baseName}.${format}`;
-    // RFC 5987 encoding for non-ASCII characters (tildes, accents, etc.)
-    const encodedName = encodeURIComponent(outputName);
-
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${outputName}"; filename*=UTF-8''${encodedName}`
-    );
-    res.setHeader('Content-Type', format === 'mp3' ? 'audio/mpeg' : 'video/mp4');
-
-    const fileStream = fs.createReadStream(filePath);
-    fileStream.pipe(res);
-    fileStream.on('close', () => {
-      fs.unlink(filePath, () => {});
-    });
-    fileStream.on('error', (err) => {
-      fs.unlink(filePath, () => {});
-      next(err);
-    });
+    const { filePath, outputName, contentType } = await prepareDownload(url, format, quality, filename);
+    streamFileToResponse(filePath, outputName, contentType, res, next);
   } catch (err) {
     next(err);
   }
