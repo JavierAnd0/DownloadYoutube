@@ -6,6 +6,10 @@ const config = require('../config');
 
 const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
 
+// yt-dlp 2026+ requires a JS runtime for YouTube extraction.
+// node is always available in our node:22-alpine base image.
+const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
+
 /**
  * Optional cookies fallback (e.g. for age-restricted content).
  * Only used if YTDLP_COOKIES env var points to an existing file.
@@ -64,6 +68,7 @@ function getVideoInfo(url) {
     const args = [
       '--dump-json',
       '--no-playlist',
+      ...JS_RUNTIME_ARGS,
       ...cookiesArgs(),
       url
     ];
@@ -126,6 +131,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-format', sel.audioFormat,
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
+        ...JS_RUNTIME_ARGS,
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
@@ -136,6 +142,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '-f', sel.formatSelector,
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
+        ...JS_RUNTIME_ARGS,
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
