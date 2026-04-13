@@ -6,9 +6,10 @@ const config = require('../config');
 
 const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
 
-// yt-dlp 2026+ requires a JS runtime for YouTube extraction.
+// yt-dlp 2026+ requires a JS runtime + EJS challenge solver for YouTube.
 // node is always available in our node:22-alpine base image.
-const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
+// ejs:github downloads the solver once and caches it in XDG_CACHE_HOME.
+const JS_RUNTIME_ARGS = ['--js-runtimes', 'node', '--remote-components', 'ejs:github'];
 
 // Use the web client with cookies auth — on datacenter IPs YouTube blocks
 // all clients (ios, android_vr, tv_embedded) at the IP level. Cookies from
