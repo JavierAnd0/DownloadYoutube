@@ -7,9 +7,9 @@ RUN npm ci --omit=dev
 # ── Stage 2: Runtime image ────────────────────────────────────────
 FROM node:22-alpine AS runtime
 
-# Install ffmpeg (brings ffprobe) and yt-dlp via pip
+# Install ffmpeg (brings ffprobe) and latest yt-dlp via pip
 RUN apk add --no-cache ffmpeg python3 py3-pip && \
-    pip3 install --break-system-packages yt-dlp
+    pip3 install --break-system-packages --upgrade yt-dlp
 
 # Non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup

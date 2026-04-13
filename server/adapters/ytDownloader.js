@@ -4,7 +4,42 @@ const fs   = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config');
 
-const { DOWNLOADS_DIR, YTDLP_BIN, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
+const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
+
+/**
+ * Returns true if the URL is a YouTube URL.
+ */
+function isYouTubeUrl(url) {
+  return /youtube\.com|youtu\.be/.test(url);
+}
+
+/**
+ * Extra args for YouTube to bypass datacenter IP bot detection.
+ *
+ * Strategy (in order of priority):
+ * 1. tv_embedded client — simulates a TV device, no sign-in required for public videos
+ * 2. ios client as fallback — also bypasses the bot check for most content
+ *
+ * This avoids the "Sign in to confirm you're not a bot" error without cookies.
+ * Only applied to YouTube URLs — other platforms are unaffected.
+ */
+function youtubeClientArgs(url) {
+  if (!isYouTubeUrl(url)) return [];
+  return ['--extractor-args', 'youtube:player_client=tv_embedded,ios'];
+}
+
+/**
+ * Optional cookies fallback (e.g. for age-restricted content).
+ * Only used if YTDLP_COOKIES env var points to an existing file.
+ */
+function cookiesArgs() {
+  if (!YTDLP_COOKIES) return [];
+  if (!fs.existsSync(YTDLP_COOKIES)) {
+    console.warn(`[yt-dlp] cookies file not found: ${YTDLP_COOKIES}`);
+    return [];
+  }
+  return ['--cookies', YTDLP_COOKIES];
+}
 
 /**
  * Returns true if the URL belongs to a supported platform.
@@ -30,7 +65,6 @@ function buildFormatSelector(format, quality) {
     return { extractAudio: true, audioFormat: format, audioQuality: '0' };
   }
 
-  // MP4 video quality ladder
   const qualityMap = {
     best:   'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
     medium: 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
@@ -49,7 +83,13 @@ function getVideoInfo(url) {
       return reject(new Error('URL no válida o plataforma no soportada'));
     }
 
-    const args = ['--dump-json', '--no-playlist', url];
+    const args = [
+      '--dump-json',
+      '--no-playlist',
+      ...youtubeClientArgs(url),
+      ...cookiesArgs(),
+      url
+    ];
 
     execFile(YTDLP_BIN, args, { timeout: 30000 }, (err, stdout, stderr) => {
       if (err) {
@@ -109,6 +149,8 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-format', sel.audioFormat,
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
+        ...youtubeClientArgs(url),
+        ...cookiesArgs(),
         '-o', outputTemplate,
         url
       ];
@@ -118,6 +160,8 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '-f', sel.formatSelector,
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
+        ...youtubeClientArgs(url),
+        ...cookiesArgs(),
         '-o', outputTemplate,
         url
       ];

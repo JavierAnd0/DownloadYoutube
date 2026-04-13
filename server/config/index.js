@@ -38,6 +38,7 @@ module.exports = {
   DOWNLOADS_DIR,
   UPLOADS_DIR,
   YTDLP_BIN:         resolveYtDlpBin(),
+  YTDLP_COOKIES:     process.env.YTDLP_COOKIES || '',   // path to cookies.txt
   FFMPEG_BIN:        process.env.FFMPEG_BIN || 'ffmpeg',
   MAX_FILE_SIZE_MB:  parseInt(process.env.MAX_FILE_SIZE_MB || '50', 10),
   TRUST_PROXY:       process.env.TRUST_PROXY === 'true',
