@@ -10,6 +10,11 @@ const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, 
 // node is always available in our node:22-alpine base image.
 const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
 
+// Force iOS/android_vr clients for YouTube — these bypass bot detection on
+// datacenter IPs without needing PO tokens. The web client (default for
+// --dump-json) requires PO tokens and fails on VPS IPs.
+const YOUTUBE_CLIENT_ARGS = ['--extractor-args', 'youtube:player_client=ios,android_vr,android,web'];
+
 /**
  * Optional cookies fallback (e.g. for age-restricted content).
  * Only used if YTDLP_COOKIES env var points to an existing file.
@@ -69,6 +74,7 @@ function getVideoInfo(url) {
       '--dump-json',
       '--no-playlist',
       ...JS_RUNTIME_ARGS,
+      ...YOUTUBE_CLIENT_ARGS,
       ...cookiesArgs(),
       url
     ];
@@ -132,6 +138,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
         ...JS_RUNTIME_ARGS,
+        ...YOUTUBE_CLIENT_ARGS,
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
@@ -143,6 +150,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
         ...JS_RUNTIME_ARGS,
+        ...YOUTUBE_CLIENT_ARGS,
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
