@@ -36,7 +36,7 @@ function getFileDuration(inputPath) {
  * Calls onProgress(percent) as conversion progresses.
  * Returns the path to the converted file.
  */
-function convertAudio(inputPath, outputFormat, onProgress) {
+function convertAudio(inputPath, outputFormat, onProgress, originalName) {
   return new Promise((resolve, reject) => {
     if (!SUPPORTED_FORMATS.includes(outputFormat)) {
       return reject(new Error(`Formato no soportado: ${outputFormat}. Usa: ${SUPPORTED_FORMATS.join(', ')}`));
@@ -45,8 +45,10 @@ function convertAudio(inputPath, outputFormat, onProgress) {
       return reject(new Error('Archivo de entrada no encontrado'));
     }
 
-    const fileId         = uuidv4();
-    const outputFilename = `${fileId}.${outputFormat}`;
+    const baseName       = originalName
+      ? path.basename(originalName, path.extname(originalName)).replace(/[^\w\s.\-()[\]áéíóúüñÁÉÍÓÚÜÑ]/g, '_').trim().slice(0, 120) || uuidv4()
+      : uuidv4();
+    const outputFilename = `${baseName}.${outputFormat}`;
     const outputPath     = path.join(DOWNLOADS_DIR, outputFilename);
 
     const command = ffmpeg(inputPath)

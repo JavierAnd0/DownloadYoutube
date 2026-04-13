@@ -14,8 +14,8 @@ const MIME_TYPES = {
  * Converts the uploaded file and returns streaming metadata.
  * The caller is responsible for piping the stream and cleaning up both files.
  */
-async function prepareConversion(inputPath, outputFormat) {
-  const { filePath, filename } = await convertAudio(inputPath, outputFormat);
+async function prepareConversion(inputPath, outputFormat, originalName) {
+  const { filePath, filename } = await convertAudio(inputPath, outputFormat, null, originalName);
   const contentType = MIME_TYPES[outputFormat] || 'application/octet-stream';
   return { filePath, filename, contentType };
 }

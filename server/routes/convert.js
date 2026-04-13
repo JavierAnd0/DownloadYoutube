@@ -58,7 +58,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
   }
 
   try {
-    const { filePath, filename, contentType } = await prepareConversion(req.file.path, outputFormat);
+    const { filePath, filename, contentType } = await prepareConversion(req.file.path, outputFormat, req.file.originalname);
     streamConvertedFile(filePath, req.file.path, filename, contentType, res, next);
   } catch (err) {
     fs.unlink(req.file.path, () => {});
