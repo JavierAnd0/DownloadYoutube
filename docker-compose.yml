@@ -9,6 +9,9 @@ services:
       - .env
     environment:
       - BGUTIL_HTTP_ENDPOINT=http://bgutil:4416
+      - YTDLP_COOKIES=/app/cookies.txt
+    volumes:
+      - /etc/grabr-cookies.txt:/app/cookies.txt:ro
     restart: unless-stopped
     depends_on:
       - bgutil
