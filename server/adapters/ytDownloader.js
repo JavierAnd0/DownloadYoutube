@@ -4,28 +4,19 @@ const fs   = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config');
 
-const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
+const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_OAUTH2, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
 
-/**
- * Returns true if the URL is a YouTube URL.
- */
 function isYouTubeUrl(url) {
   return /youtube\.com|youtu\.be/.test(url);
 }
 
 /**
- * Extra args for YouTube to bypass datacenter IP bot detection.
- *
- * Strategy (in order of priority):
- * 1. tv_embedded client — simulates a TV device, no sign-in required for public videos
- * 2. ios client as fallback — also bypasses the bot check for most content
- *
- * This avoids the "Sign in to confirm you're not a bot" error without cookies.
- * Only applied to YouTube URLs — other platforms are unaffected.
+ * OAuth2 args for YouTube — uses the cached token from the one-time device auth.
+ * Token is stored in XDG_CACHE_HOME and auto-refreshed by yt-dlp (lasts ~6 months).
  */
-function youtubeClientArgs(url) {
-  if (!isYouTubeUrl(url)) return [];
-  return ['--extractor-args', 'youtube:player_client=tv_embedded,ios'];
+function oauthArgs(url) {
+  if (!YTDLP_OAUTH2 || !isYouTubeUrl(url)) return [];
+  return ['--username', 'oauth2', '--password', ''];
 }
 
 /**
@@ -86,7 +77,7 @@ function getVideoInfo(url) {
     const args = [
       '--dump-json',
       '--no-playlist',
-      ...youtubeClientArgs(url),
+      ...oauthArgs(url),
       ...cookiesArgs(),
       url
     ];
@@ -149,7 +140,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-format', sel.audioFormat,
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
-        ...youtubeClientArgs(url),
+        ...oauthArgs(url),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
@@ -160,7 +151,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '-f', sel.formatSelector,
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
-        ...youtubeClientArgs(url),
+        ...oauthArgs(url),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
