@@ -85,6 +85,9 @@
     if (!isValidUrl(url)) { showMessage('URL no válida o plataforma no soportada', 'error'); urlInput.classList.add('shake'); setTimeout(() => urlInput.classList.remove('shake'), 500); return; }
 
     hideMessage();
+    videoThumb.src = '';
+    videoThumb.alt = '';
+    videoTitle.textContent = '';
     videoInfo.classList.add('hidden');
     formatPicker.classList.add('hidden');
     btnDownload.classList.add('hidden');
