@@ -4,20 +4,7 @@ const fs   = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config');
 
-const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_OAUTH2, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
-
-function isYouTubeUrl(url) {
-  return /youtube\.com|youtu\.be/.test(url);
-}
-
-/**
- * OAuth2 args for YouTube — uses the cached token from the one-time device auth.
- * Token is stored in XDG_CACHE_HOME and auto-refreshed by yt-dlp (lasts ~6 months).
- */
-function oauthArgs(url) {
-  if (!YTDLP_OAUTH2 || !isYouTubeUrl(url)) return [];
-  return ['--username', 'oauth2', '--password', ''];
-}
+const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, DOWNLOAD_AUDIO_FORMATS } = config;
 
 /**
  * Optional cookies fallback (e.g. for age-restricted content).
@@ -77,7 +64,6 @@ function getVideoInfo(url) {
     const args = [
       '--dump-json',
       '--no-playlist',
-      ...oauthArgs(url),
       ...cookiesArgs(),
       url
     ];
@@ -140,7 +126,6 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-format', sel.audioFormat,
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
-        ...oauthArgs(url),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
@@ -151,7 +136,6 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '-f', sel.formatSelector,
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
-        ...oauthArgs(url),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url

@@ -1,4 +1,14 @@
 services:
+  bgutil:
+    image: brainicism/bgutil-ytdlp-pot-provider:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4416/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
   app:
     build: .
     ports:
@@ -6,11 +16,11 @@ services:
     env_file:
       - .env
     environment:
-      - NODE_ENV=development
-    volumes:
-      - ./server:/app/server
-      - ./public:/app/public
+      - BGUTIL_HTTP_ENDPOINT=http://bgutil:4416
     restart: unless-stopped
+    depends_on:
+      bgutil:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
       interval: 10s

@@ -9,7 +9,7 @@ FROM node:22-alpine AS runtime
 
 # Install ffmpeg + latest yt-dlp + OAuth2 plugin for YouTube auth
 RUN apk add --no-cache ffmpeg python3 py3-pip && \
-    pip3 install --break-system-packages --upgrade yt-dlp yt-dlp-youtube-oauth2
+    pip3 install --break-system-packages --upgrade yt-dlp bgutil-ytdlp-pot-provider
 
 # Non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
