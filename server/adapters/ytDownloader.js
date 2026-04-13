@@ -15,13 +15,13 @@ const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
 // a logged-in account bypass that check. tv_embedded is kept as first choice
 // since it requires fewer cookie scopes; web is the authoritative fallback.
 function buildYoutubeClientArgs() {
+  const args = ['--extractor-args', 'youtube:player_client=web,mweb'];
   const bgutilUrl = process.env.BGUTIL_HTTP_ENDPOINT;
-  const bgutilArg = bgutilUrl
-    ? `youtubepot-bgutilhttp:base_url=${bgutilUrl}`
-    : null;
-  const clientArg = 'youtube:player_client=tv_embedded,web,mweb';
-  const extraArgs = [clientArg, bgutilArg].filter(Boolean).join(';');
-  return ['--extractor-args', extraArgs];
+  if (bgutilUrl) {
+    // Pass as a separate --extractor-args to avoid semicolon parsing issues
+    args.push('--extractor-args', `youtubepot-bgutilhttp:base_url=${bgutilUrl}`);
+  }
+  return args;
 }
 
 /**

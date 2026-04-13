@@ -11,7 +11,7 @@ services:
       - BGUTIL_HTTP_ENDPOINT=http://bgutil:4416
       - YTDLP_COOKIES=/app/cookies.txt
     volumes:
-      - /etc/grabr-cookies.txt:/app/cookies.txt:ro
+      - /etc/grabr-cookies.txt:/app/cookies.txt
     restart: unless-stopped
     depends_on:
       - bgutil
