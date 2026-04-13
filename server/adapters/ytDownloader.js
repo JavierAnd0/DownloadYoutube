@@ -10,10 +10,17 @@ const { DOWNLOADS_DIR, YTDLP_BIN, YTDLP_COOKIES, FFMPEG_BIN, PLATFORM_PATTERNS, 
 // node is always available in our node:22-alpine base image.
 const JS_RUNTIME_ARGS = ['--js-runtimes', 'node'];
 
-// Force iOS/android_vr clients for YouTube — these bypass bot detection on
-// datacenter IPs without needing PO tokens. The web client (default for
-// --dump-json) requires PO tokens and fails on VPS IPs.
-const YOUTUBE_CLIENT_ARGS = ['--extractor-args', 'youtube:player_client=ios,android_vr,android,web'];
+// Use the web client so bgutil-ytdlp-pot-provider can supply PO tokens.
+// iOS/android_vr bypass PO tokens but are now bot-detected on datacenter IPs.
+// If BGUTIL_HTTP_ENDPOINT is set, pass it explicitly as an extractor arg so
+// the plugin knows where the bgutil HTTP server is, regardless of env reading order.
+function buildYoutubeClientArgs() {
+  const bgutilEndpoint = process.env.BGUTIL_HTTP_ENDPOINT;
+  const extractorValue = bgutilEndpoint
+    ? `youtube:player_client=web,mweb;getpot_bgutil_baseurl=${bgutilEndpoint}`
+    : 'youtube:player_client=web,mweb';
+  return ['--extractor-args', extractorValue];
+}
 
 /**
  * Optional cookies fallback (e.g. for age-restricted content).
@@ -74,7 +81,7 @@ function getVideoInfo(url) {
       '--dump-json',
       '--no-playlist',
       ...JS_RUNTIME_ARGS,
-      ...YOUTUBE_CLIENT_ARGS,
+      ...buildYoutubeClientArgs(),
       ...cookiesArgs(),
       url
     ];
@@ -138,7 +145,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--audio-quality', sel.audioQuality,
         '--ffmpeg-location', FFMPEG_BIN,
         ...JS_RUNTIME_ARGS,
-        ...YOUTUBE_CLIENT_ARGS,
+        ...buildYoutubeClientArgs(),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
@@ -150,7 +157,7 @@ function downloadVideo(url, format = 'mp4', quality = 'best') {
         '--merge-output-format', 'mp4',
         '--ffmpeg-location', FFMPEG_BIN,
         ...JS_RUNTIME_ARGS,
-        ...YOUTUBE_CLIENT_ARGS,
+        ...buildYoutubeClientArgs(),
         ...cookiesArgs(),
         '-o', outputTemplate,
         url
